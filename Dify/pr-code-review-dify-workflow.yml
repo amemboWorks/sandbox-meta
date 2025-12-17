@@ -1,0 +1,769 @@
+app:
+  description: GitHub REST APIを使用してPRの差分情報を取得し、ファイル毎にAzure OpenAIでコードレビューを行うワークフロー
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: GitHub PR Code Review (HTTP版)
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/openai:0.2.7@9031bbf9b37d9f6341a20c78a8bd18d686afd3ff627545496c3557705419d084
+    version: null
+kind: app
+version: 0.5.0
+workflow:
+  conversation_variables: []
+  environment_variables:
+  - description: ''
+    id: de9e5b25-d4fd-46f6-bcb8-1f0b18a53c1b
+    name: GITHUB_TOKEN
+    selector:
+    - env
+    - GITHUB_TOKEN
+    value: ''
+    value_type: secret
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInLoop: false
+        sourceType: start
+        targetType: http-request
+      id: 1765864810321-source-1765865413274-target
+      selected: false
+      source: '1765864810321'
+      sourceHandle: source
+      target: '1765865413274'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 17658657034440-source-1765865834591-target
+      selected: false
+      source: '17658657034440'
+      sourceHandle: source
+      target: '1765865834591'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: llm
+      id: 1765865834591-source-1765866652109-target
+      selected: false
+      source: '1765865834591'
+      sourceHandle: source
+      target: '1765866652109'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+      id: 1765866652109-source-1765866969379-target
+      selected: false
+      source: '1765866652109'
+      sourceHandle: source
+      target: '1765866969379'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: http-request
+      id: 1765865413274-source-17658656443830-target
+      selected: false
+      source: '1765865413274'
+      sourceHandle: source
+      target: '17658656443830'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: http-request
+        targetType: http-request
+      id: 17658656443830-source-17658657034440-target
+      selected: false
+      source: '17658656443830'
+      sourceHandle: source
+      target: '17658657034440'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 開始
+        type: start
+        variables:
+        - default: ''
+          hint: ''
+          label: リポジトリオーナー
+          max_length: 100
+          options: []
+          placeholder: ''
+          required: true
+          type: text-input
+          variable: owner
+        - default: ''
+          hint: ''
+          label: リポジトリ名
+          max_length: 100
+          options: []
+          placeholder: ''
+          required: true
+          type: text-input
+          variable: repo
+        - default: ''
+          hint: ''
+          label: PR番号
+          max_length: 10
+          options: []
+          placeholder: ''
+          required: true
+          type: text-input
+          variable: pr_number
+        - default: ''
+          hint: ''
+          label: PRタイトル
+          max_length: 500
+          options: []
+          placeholder: ''
+          required: false
+          type: paragraph
+          variable: pr_title
+        - default: ''
+          hint: ''
+          label: PR説明
+          max_length: 10000
+          options: []
+          placeholder: ''
+          required: false
+          type: paragraph
+          variable: pr_body
+        - default: ''
+          hint: ''
+          label: PR URL
+          max_length: 500
+          options: []
+          placeholder: ''
+          required: false
+          type: paragraph
+          variable: pr_url
+        - default: ''
+          hint: ''
+          label: Head SHA
+          max_length: 50
+          options: []
+          placeholder: ''
+          required: false
+          type: text-input
+          variable: head_sha
+        - default: ''
+          hint: ''
+          label: Base SHA
+          max_length: 50
+          options: []
+          placeholder: ''
+          required: false
+          type: text-input
+          variable: base_sha
+        - default: ''
+          hint: ''
+          label: ファイルメタデータJSON
+          max_length: 500000
+          options: []
+          placeholder: ''
+          required: true
+          type: paragraph
+          variable: files_meta_json
+      height: 315
+      id: '1765864810321'
+      position:
+        x: 0
+        y: 0
+      positionAbsolute:
+        x: 0
+        y: 0
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: GitHub REST APIでPRの変更ファイル（patch含む）を取得
+        headers: 'Authorization:Bearer {{#env.GITHUB_TOKEN#}}
+
+          Accept:application/vnd.github.v3+json
+
+          X-GitHub-Api-Version:2022-11-28'
+        method: get
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          connect: 10
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+          read: 60
+          write: 30
+        title: PR差分取得
+        type: http-request
+        url: https://api.github.com/repos/{{#1765864810321.owner#}}/{{#1765864810321.repo#}}/pulls/{{#1765864810321.pr_number#}}/files?per_page=100
+        variables: []
+      height: 235
+      id: '1765865413274'
+      position:
+        x: 342
+        y: 48
+      positionAbsolute:
+        x: 342
+        y: 48
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 241
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: GitHub REST APIでPRの変更ファイル（patch含む）を取得
+        headers: 'Authorization:Bearer {{#env.GITHUB_TOKEN#}}
+
+          Accept:application/vnd.github.v3+json
+
+          X-GitHub-Api-Version:2022-11-28'
+        method: get
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          connect: 10
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+          read: 60
+          write: 30
+        title: PR差分取得 (page=2)
+        type: http-request
+        url: https://api.github.com/repos/{{#1765864810321.owner#}}/{{#1765864810321.repo#}}/pulls/{{#1765864810321.pr_number#}}/files?per_page=100&page=2
+        variables: []
+      height: 235
+      id: '17658656443830'
+      position:
+        x: 683
+        y: 48
+      positionAbsolute:
+        x: 683
+        y: 48
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 241
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: GitHub REST APIでPRの変更ファイル（patch含む）を取得
+        headers: 'Authorization:Bearer {{#env.GITHUB_TOKEN#}}
+
+          Accept:application/vnd.github.v3+json
+
+          X-GitHub-Api-Version:2022-11-28'
+        method: get
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          connect: 10
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+          read: 60
+          write: 30
+        title: PR差分取得 (page=3)
+        type: http-request
+        url: https://api.github.com/repos/{{#1765864810321.owner#}}/{{#1765864810321.repo#}}/pulls/{{#1765864810321.pr_number#}}/files?per_page=100&page=3
+        variables: []
+      height: 235
+      id: '17658657034440'
+      position:
+        x: 1024
+        y: 48
+      positionAbsolute:
+        x: 1024
+        y: 48
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 241
+    - data:
+        code: "import json\nfrom typing import Any\nimport re\n\ndef get_file_priority(filename:\
+          \ str, status: str) -> tuple:\n    \"\"\"\n    ファイルの優先度を計算する（Webサイト開発向け）。\n\
+          \    戻り値: (priority_group, sub_priority)\n    - priority_groupが小さいほど優先度が高い\n\
+          \    - 同一グループ内ではsub_priorityでソート\n    \"\"\"\n    # 削除ファイルは最低優先度\n    if\
+          \ status == \"removed\":\n        return (99, 0)\n    \n    # 拡張子を取得\n \
+          \   ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''\n\
+          \    basename = filename.rsplit('/', 1)[-1].lower()\n    path_lower = filename.lower()\n\
+          \    \n    # テスト判定用\n    is_test = ('test' in basename or 'spec' in basename\
+          \ or \n              '_test.' in path_lower or '.test.' in path_lower or\n\
+          \              '/test/' in path_lower or '/tests/' in path_lower or\n  \
+          \            '/__tests__/' in path_lower)\n    \n    # グループ1: フロントエンドコンポーネント・ページ（最優先）\n\
+          \    frontend_exts = {'tsx', 'jsx', 'vue', 'svelte'}\n    if ext in frontend_exts:\n\
+          \        if is_test:\n            return (5, 0)\n        # ページ・レイアウトは特に重要\n\
+          \        if '/pages/' in path_lower or '/app/' in path_lower or '/layouts/'\
+          \ in path_lower:\n            return (1, 0)\n        # コンポーネント\n       \
+          \ if '/components/' in path_lower:\n            return (1, 1)\n        return\
+          \ (1, 2)\n    \n    # グループ2: JavaScript/TypeScript（ロジック・ユーティリティ）\n    js_exts\
+          \ = {'ts', 'js', 'mjs', 'cjs'}\n    if ext in js_exts:\n        if is_test:\n\
+          \            return (5, 0)\n        # API・サーバーサイド\n        if '/api/' in\
+          \ path_lower or '/server/' in path_lower:\n            return (2, 0)\n \
+          \       # フック・ストア・ユーティリティ\n        if '/hooks/' in path_lower or '/store/'\
+          \ in path_lower or '/utils/' in path_lower or '/lib/' in path_lower:\n \
+          \           return (2, 1)\n        return (2, 2)\n    \n    # グループ3: スタイルシート（Webサイトでは重要）\n\
+          \    style_exts = {'css', 'scss', 'sass', 'less', 'styl'}\n    if ext in\
+          \ style_exts:\n        # グローバルスタイルは重要\n        if 'global' in basename or\
+          \ 'main' in basename or 'app' in basename or 'index' in basename:\n    \
+          \        return (3, 0)\n        return (3, 1)\n    \n    # グループ4: HTML・テンプレート\n\
+          \    template_exts = {'html', 'htm', 'ejs', 'hbs', 'pug', 'njk', 'twig'}\n\
+          \    if ext in template_exts:\n        return (4, 0)\n    \n    # グループ5:\
+          \ テストファイル\n    if is_test:\n        return (5, 0)\n    \n    # グループ6: 設定ファイル\n\
+          \    config_patterns = [\n        'package.json', 'package-lock.json', 'yarn.lock',\
+          \ 'pnpm-lock.yaml',\n        'tsconfig', 'jsconfig', 'vite.config', 'next.config',\
+          \ 'nuxt.config',\n        'webpack.config', 'rollup.config', 'esbuild',\
+          \ 'babel.config',\n        'tailwind.config', 'postcss.config', 'eslint',\
+          \ 'prettier',\n        '.env', 'vercel.json', 'netlify.toml'\n    ]\n  \
+          \  config_exts = {'json', 'yml', 'yaml', 'toml', 'js', 'ts', 'mjs', 'cjs'}\n\
+          \    if any(p in basename for p in config_patterns):\n        # package.jsonは特に重要\n\
+          \        if basename == 'package.json':\n            return (6, 0)\n   \
+          \     return (6, 1)\n    if ext in config_exts and ('config' in basename\
+          \ or 'rc' in basename):\n        return (6, 2)\n    \n    # グループ7: ドキュメント\n\
+          \    doc_exts = {'md', 'mdx', 'txt', 'rst'}\n    if ext in doc_exts:\n \
+          \       if basename == 'readme.md':\n            return (7, 0)\n       \
+          \ return (7, 1)\n    \n    # グループ8: 画像・アセット\n    asset_exts = {'svg', 'png',\
+          \ 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'avif'}\n    font_exts = {'woff',\
+          \ 'woff2', 'ttf', 'eot', 'otf'}\n    if ext in asset_exts:\n        # SVGはコードとして扱うことも多い\n\
+          \        if ext == 'svg':\n            return (8, 0)\n        return (8,\
+          \ 1)\n    if ext in font_exts:\n        return (8, 2)\n    \n    # グループ9:\
+          \ インフラ・CI/CD\n    infra_patterns = ['dockerfile', 'docker-compose', '.github/',\
+          \ 'jenkinsfile', '.gitlab-ci']\n    if any(p in path_lower for p in infra_patterns):\n\
+          \        return (9, 0)\n    \n    # その他\n    return (10, 0)\n\ndef main(\n\
+          \    files_meta_json: str,\n    pr_files_response: str,\n    pr_files_response_p2:\
+          \ str,\n    pr_files_response_p3: str,\n    pr_title: str,\n    pr_body:\
+          \ str,\n    pr_url: str,\n    owner: str,\n    repo: str,\n    pr_number:\
+          \ str\n) -> dict[str, Any]:\n    \"\"\"\n    GitHub Actionsのメタデータとpatch情報を統合してレビュー用データを作成。\n\
+          \    ファイルを優先度でソートし、各ファイルを均等にトランケートして\n    漏れなくレビューできるようにする。\n    \"\"\"\n\
+          \    # 設定値\n    MAX_DETAILED_FILES = 50      # 詳細patch付きで表示するファイル数\n   \
+          \ MAX_PATCH_PER_FILE = 4000    # ファイルあたりの最大patch文字数\n    MAX_TOTAL_CHARS\
+          \ = 120000     # 合計最大文字数（LLMコンテキスト制限対策）\n    \n    try:\n        # GitHub\
+          \ Actionsからのメタデータをパース\n        files_meta = json.loads(files_meta_json)\
+          \ if files_meta_json else []\n        \n        # GitHub APIレスポンス（patch含む）をパース\n\
+          \        pr_files = []\n        for _resp in [pr_files_response, pr_files_response_p2,\
+          \ pr_files_response_p3]:\n            if _resp:\n                pr_files.extend(json.loads(_resp))\n\
+          \        \n        # ファイル名をキーにしたpatchマップを作成\n        patch_map = {}\n  \
+          \      for f in pr_files:\n            if isinstance(f, dict):\n       \
+          \         filename = f.get(\"filename\", \"\")\n                patch =\
+          \ f.get(\"patch\", \"\")\n                patch_map[filename] = patch\n\
+          \        \n        # 統計情報を計算\n        total_additions = 0\n        total_deletions\
+          \ = 0\n        total_changes = 0\n        \n        # ファイルごとの詳細情報を構築\n \
+          \       file_details = []\n        for f in files_meta:\n            if\
+          \ not isinstance(f, dict):\n                continue\n            \n   \
+          \         filename = f.get(\"filename\", \"unknown\")\n            status\
+          \ = f.get(\"status\", \"unknown\")\n            additions = f.get(\"additions\"\
+          , 0)\n            deletions = f.get(\"deletions\", 0)\n            changes\
+          \ = f.get(\"changes\", 0)\n            previous_filename = f.get(\"previous_filename\"\
+          )\n            \n            total_additions += additions\n            total_deletions\
+          \ += deletions\n            total_changes += changes\n            \n   \
+          \         # patchを取得\n            patch = patch_map.get(filename, \"\")\n\
+          \            \n            # 優先度を計算\n            priority = get_file_priority(filename,\
+          \ status)\n            \n            file_details.append({\n           \
+          \     \"filename\": filename,\n                \"status\": status,\n   \
+          \             \"additions\": additions,\n                \"deletions\":\
+          \ deletions,\n                \"changes\": changes,\n                \"\
+          previous_filename\": previous_filename,\n                \"patch\": patch,\n\
+          \                \"priority\": priority,\n                \"has_patch\"\
+          : bool(patch)\n            })\n        \n        # 優先度でソート（優先度が低い数値 = 高優先度）\n\
+          \        file_details.sort(key=lambda x: (x[\"priority\"], -x[\"changes\"\
+          ]))\n        \n        # レビュー用のフォーマット済みテキストを生成\n        output_lines = []\n\
+          \        current_chars = 0\n        \n        # PR基本情報\n        output_lines.append(\"\
+          ## Pull Request 情報\")\n        output_lines.append(f\"- **タイトル**: {pr_title\
+          \ or '(なし)'}\")\n        output_lines.append(f\"- **リポジトリ**: {owner}/{repo}\"\
+          )\n        output_lines.append(f\"- **PR番号**: #{pr_number}\")\n        if\
+          \ pr_url:\n            output_lines.append(f\"- **URL**: {pr_url}\")\n \
+          \       output_lines.append(f\"- **変更ファイル数**: {len(file_details)}\")\n \
+          \       output_lines.append(f\"- **追加行数**: +{total_additions}\")\n     \
+          \   output_lines.append(f\"- **削除行数**: -{total_deletions}\")\n        \n\
+          \        # PR説明\n        if pr_body:\n            truncated_body = pr_body[:1000]\n\
+          \            if len(pr_body) > 1000:\n                truncated_body +=\
+          \ \"... (truncated)\"\n            output_lines.append(f\"\\n### PR説明\\\
+          n{truncated_body}\")\n        \n        current_chars = sum(len(line) for\
+          \ line in output_lines)\n        \n        # ファイル詳細セクション\n        output_lines.append(\"\
+          \\n## 変更ファイル詳細\")\n        output_lines.append(f\"（優先度順に{min(MAX_DETAILED_FILES,\
+          \ len(file_details))}件を詳細表示）\\n\")\n        \n        # ステータス絵文字マッピング\n\
+          \        status_emoji = {\n            \"added\": \"\U0001F195\",\n    \
+          \        \"modified\": \"\U0001F4DD\",\n            \"renamed\": \"\U0001F4DB\
+          \",\n            \"removed\": \"\U0001F5D1️\",\n            \"copied\":\
+          \ \"\U0001F4CB\"\n        }\n        \n        # 詳細表示するファイル\n        detailed_files\
+          \ = []\n        summary_files = []\n        truncated_files = []\n     \
+          \   \n        for i, f in enumerate(file_details):\n            if i < MAX_DETAILED_FILES\
+          \ and current_chars < MAX_TOTAL_CHARS:\n                emoji = status_emoji.get(f[\"\
+          status\"], \"\U0001F4C4\")\n                file_section = []\n        \
+          \        file_section.append(f\"\\n### {emoji} {f['filename']}\")\n    \
+          \            file_section.append(f\"変更: +{f['additions']} / -{f['deletions']}\
+          \ | ステータス: {f['status']}\")\n                \n                if f[\"previous_filename\"\
+          ]:\n                    file_section.append(f\"元ファイル名: {f['previous_filename']}\"\
+          )\n                \n                if f[\"patch\"] and f[\"status\"] !=\
+          \ \"removed\":\n                    patch = f[\"patch\"]\n             \
+          \       was_truncated = False\n                    if len(patch) > MAX_PATCH_PER_FILE:\n\
+          \                        patch = patch[:MAX_PATCH_PER_FILE]\n          \
+          \              was_truncated = True\n                        truncated_files.append(f[\"\
+          filename\"])\n                    \n                    file_section.append(f\"\
+          \\n```diff\\n{patch}\")\n                    if was_truncated:\n       \
+          \                 file_section.append(f\"... (残り{len(f['patch']) - MAX_PATCH_PER_FILE}文字省略)\"\
+          )\n                    file_section.append(\"```\")\n                elif\
+          \ f[\"status\"] == \"removed\":\n                    file_section.append(\"\
+          (ファイル削除)\")\n                elif not f[\"has_patch\"]:\n              \
+          \      file_section.append(\"(パッチ情報なし - バイナリファイルまたは大きすぎるファイル)\")\n     \
+          \           \n                section_text = \"\\n\".join(file_section)\n\
+          \                section_chars = len(section_text)\n                \n \
+          \               # 文字数制限チェック\n                if current_chars + section_chars\
+          \ < MAX_TOTAL_CHARS:\n                    output_lines.append(section_text)\n\
+          \                    current_chars += section_chars\n                  \
+          \  detailed_files.append(f[\"filename\"])\n                else:\n     \
+          \               summary_files.append(f)\n            else:\n           \
+          \     summary_files.append(f)\n        \n        # サマリー表示（詳細表示できなかったファイル）\n\
+          \        if summary_files:\n            output_lines.append(f\"\\n## その他の変更ファイル（{len(summary_files)}件）\"\
+          )\n            output_lines.append(\"※ 以下のファイルは差分の詳細表示を省略しています\\n\")\n \
+          \           \n            for f in summary_files:\n                emoji\
+          \ = status_emoji.get(f[\"status\"], \"\U0001F4C4\")\n                output_lines.append(f\"\
+          - {emoji} **{f['filename']}** (+{f['additions']}/-{f['deletions']})\")\n\
+          \        \n        # トランケート警告\n        if truncated_files:\n           \
+          \ output_lines.append(f\"\\n---\\n⚠️ **注意**: 以下のファイルは差分が長いため一部省略されています:\"\
+          )\n            for tf in truncated_files[:10]:  # 最大10件表示\n            \
+          \    output_lines.append(f\"  - {tf}\")\n            if len(truncated_files)\
+          \ > 10:\n                output_lines.append(f\"  - 他 {len(truncated_files)\
+          \ - 10} 件\")\n        \n        result = \"\\n\".join(output_lines)\n  \
+          \      \n        return {\n            \"result\": result,\n           \
+          \ \"file_count\": len(file_details),\n            \"detailed_file_count\"\
+          : len(detailed_files),\n            \"summary_file_count\": len(summary_files),\n\
+          \            \"truncated_file_count\": len(truncated_files),\n         \
+          \   \"total_additions\": total_additions,\n            \"total_deletions\"\
+          : total_deletions,\n            \"total_changes\": total_changes,\n    \
+          \        \"total_chars\": len(result),\n            \"has_changes\": len(file_details)\
+          \ > 0\n        }\n        \n    except json.JSONDecodeError as e:\n    \
+          \    return {\n            \"result\": f\"⚠️ JSONパースエラー: {str(e)}\",\n \
+          \           \"file_count\": 0,\n            \"detailed_file_count\": 0,\n\
+          \            \"summary_file_count\": 0,\n            \"truncated_file_count\"\
+          : 0,\n            \"total_additions\": 0,\n            \"total_deletions\"\
+          : 0,\n            \"total_changes\": 0,\n            \"total_chars\": 0,\n\
+          \            \"has_changes\": False\n        }\n    except Exception as\
+          \ e:\n        return {\n            \"result\": f\"⚠️ データ整形エラー: {str(e)}\"\
+          ,\n            \"file_count\": 0,\n            \"detailed_file_count\":\
+          \ 0,\n            \"summary_file_count\": 0,\n            \"truncated_file_count\"\
+          : 0,\n            \"total_additions\": 0,\n            \"total_deletions\"\
+          : 0,\n            \"total_changes\": 0,\n            \"total_chars\": 0,\n\
+          \            \"has_changes\": False\n        }"
+        code_language: python3
+        desc: ファイルを優先度でソートし、漏れなくレビュー用データを作成
+        outputs:
+          detailed_file_count:
+            children: null
+            type: string
+          file_count:
+            children: null
+            type: string
+          has_changes:
+            children: null
+            type: string
+          result:
+            children: null
+            type: string
+          summary_file_count:
+            children: null
+            type: string
+          total_additions:
+            children: null
+            type: string
+          total_deletions:
+            children: null
+            type: string
+          truncated_file_count:
+            children: null
+            type: string
+        selected: false
+        title: 差分データ整形
+        type: code
+        variables:
+        - value_selector:
+          - '1765864810321'
+          - files_meta_json
+          value_type: string
+          variable: files_meta_json
+        - value_selector:
+          - '1765865413274'
+          - body
+          value_type: string
+          variable: pr_files_response
+        - value_selector:
+          - '17658656443830'
+          - body
+          value_type: string
+          variable: pr_files_response_p2
+        - value_selector:
+          - '17658657034440'
+          - body
+          value_type: string
+          variable: pr_files_response_p3
+        - value_selector:
+          - '1765864810321'
+          - pr_title
+          value_type: string
+          variable: pr_title
+        - value_selector:
+          - '1765864810321'
+          - pr_body
+          value_type: string
+          variable: pr_body
+        - value_selector:
+          - '1765864810321'
+          - pr_url
+          value_type: string
+          variable: pr_url
+        - value_selector:
+          - '1765864810321'
+          - owner
+          value_type: string
+          variable: owner
+        - value_selector:
+          - '1765864810321'
+          - repo
+          value_type: string
+          variable: repo
+        - value_selector:
+          - '1765864810321'
+          - pr_number
+          value_type: string
+          variable: pr_number
+      height: 94
+      id: '1765865834591'
+      position:
+        x: 1365
+        y: 111
+      positionAbsolute:
+        x: 1365
+        y: 111
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 241
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: Azure OpenAIでファイル毎に漏れなくコードレビューを実施
+        model:
+          completion_params:
+            max_tokens: 4096
+            temperature: 0.2
+            top_p: 0.95
+          mode: chat
+          name: gpt-4
+          provider: langgenius/openai/openai
+        prompt_template:
+        - id: 2a45abbc-e6ce-49ac-bd23-c9f331039c56
+          role: system
+          text: "あなたは10年以上の経験を持つシニアソフトウェアエンジニアで、コードレビューの専門家です。\nチームの生産性向上とコード品質の維持を最優先に考え、建設的で実用的なフィードバックを提供します。\n\
+            \n## レビュー方針\n\n- **漏れのないレビュー**: 提示された全てのファイルについてコメントしてください\n- 重大なバグや脆弱性を最優先で指摘\n\
+            - 単なるスタイルの好みより、実質的な品質改善を重視\n- 良い点も積極的に認め、モチベーションを維持\n- 指摘には必ず改善案を添える\n\
+            \n## 評価観点（優先度順）\n\n### 1. 安全性・セキュリティ（最優先）\n- SQLインジェクション、XSS、CSRF\n- 認証・認可の問題\n\
+            - 機密情報の漏洩リスク（APIキー、パスワード等）\n- 入力値の検証不足\n\n### 2. バグ・ロジックエラー\n- エッジケースの考慮漏れ\n\
+            - Off-by-oneエラー\n- null/undefined参照\n- 例外処理の不備\n- 競合状態（race condition）\n\
+            \n### 3. パフォーマンス\n- N+1クエリ問題\n- 不要な再計算・再レンダリング\n- メモリリーク\n- 非効率なアルゴリズム\n\
+            \n### 4. 保守性・可読性\n- 命名規則の一貫性\n- 複雑度の高い処理（認知的複雑度）\n- マジックナンバー・マジックストリング\n\
+            - 適切なコメント・ドキュメント\n\n### 5. 設計・アーキテクチャ\n- 責務の分離（SRP）\n- DRY原則の遵守\n- テスタビリティ\n\
+            - 依存関係の方向\n\n## 出力フォーマット\n\n必ず以下の形式で日本語で回答してください。\n**重要**: 提示された全ファイルについてコメントを含めてください。\n\
+            **注意**: スコアはPRの内容に応じて1〜5であなた自身が判断してください（例の数値に引きずられない）。\n\n### \U0001F4CA\
+            \ 総合評価\n\n**スコア**: 1〜5/5（例: 4/5）。必要に応じて ⭐ 表記してよい（例に引きずられない）\n\n**概要**:\
+            \ [1〜2文での変更サマリー]\n\n**レビュー判定**: `APPROVE` / `REQUEST_CHANGES` / `COMMENT`\n\
+            \n---\n\n### \U0001F534 重大な指摘（必須修正）\n\n> 重大なセキュリティ問題やバグがあれば記載。なければ「なし」\n\
+            \n**例:**\n- **[ファイル名:行番号]** 問題の説明\n```言語\n  修正案のコード\n```\n\n---\n\n###\
+            \ \U0001F7E1 改善推奨\n\n> パフォーマンスや保守性に関する指摘\n\n---\n\n### \U0001F7E2 軽微な提案\n\
+            \n> コードスタイルや命名に関する提案\n\n---\n\n### \U0001F4C1 ファイル別コメント\n\n> **各ファイルについて簡潔にコメント**してください（1〜2行でOK）\n\
+            > 問題がなければ「✅ 問題なし」と記載\n\n| ファイル | コメント |\n|---------|---------|\n| `example.py`\
+            \ | ✅ 適切な実装 |\n| `config.yml` | ⚠️ 環境変数の使用を推奨 |\n\n---\n\n### ✅ 良かった点\n\
+            \n> 積極的に評価できる点を具体的に\n\n---\n\n### \U0001F4A1 その他のコメント\n\n> レビュアーとして伝えたいこと（任意）"
+        - id: 9699f50a-1e7e-44f5-bd2b-4a7994837ea5
+          role: user
+          text: '以下のPull Requestのコードレビューをお願いします。
+
+            提示された全てのファイルについてコメントしてください。
+
+
+            {{#1765865834591.result#}}
+
+
+            ---
+
+            **レビュー対象ファイル数**: {{#1765865834591.file_count#}}件
+
+            **詳細表示**: {{#1765865834591.detailed_file_count#}}件
+
+            **サマリー表示**: {{#1765865834591.summary_file_count#}}件'
+        selected: true
+        title: AIコードレビュー
+        type: llm
+        vision:
+          enabled: false
+      height: 130
+      id: '1765866652109'
+      position:
+        x: 1706
+        y: 93
+      positionAbsolute:
+        x: 1706
+        y: 93
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 241
+    - data:
+        outputs:
+        - value_selector:
+          - '1765866652109'
+          - text
+          value_type: string
+          variable: review_result
+        - value_selector:
+          - '1765865834591'
+          - file_count
+          value_type: string
+          variable: file_count
+        - value_selector:
+          - '1765865834591'
+          - detailed_file_count
+          value_type: string
+          variable: detailed_file_count
+        - value_selector:
+          - '1765865834591'
+          - summary_file_count
+          value_type: string
+          variable: summary_file_count
+        - value_selector:
+          - '1765865834591'
+          - truncated_file_count
+          value_type: string
+          variable: truncated_file_count
+        - value_selector:
+          - '1765865834591'
+          - total_additions
+          value_type: string
+          variable: total_additions
+        - value_selector:
+          - '1765865834591'
+          - total_deletions
+          value_type: string
+          variable: total_deletions
+        selected: false
+        title: 終了
+        type: end
+      height: 243
+      id: '1765866969379'
+      position:
+        x: 2047
+        y: 36
+      positionAbsolute:
+        x: 2047
+        y: 36
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 241
+    viewport:
+      x: 66.86111389390294
+      y: 123.16666705782205
+      zoom: 0.48611111111111116
+  rag_pipeline_variables: []

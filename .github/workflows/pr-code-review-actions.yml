@@ -1,0 +1,288 @@
+name: PR Code Review with Dify (No Fork PR)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  # PRがない場合（手動トリガーなど）のフォールバックを追加
+  group: pr-code-review-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+    # ドラフトPRはスキップ + fork PRは対象外（同一リポジトリPRのみ）
+    if: ${{ github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ファイルメタデータとPR情報を一括取得
+      - name: Collect PR and files metadata
+        id: pr-data
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const { owner, repo } = context.repo;
+
+            // ページネーション対応でファイル一覧を取得
+            const per_page = 100;
+            let page = 1;
+            let files = [];
+            const maxFiles = 300; // 最大ファイル数制限
+
+            while (files.length < maxFiles) {
+              const res = await github.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
+                owner,
+                repo,
+                pull_number: pr.number,
+                per_page,
+                page
+              });
+
+              files.push(...res.data.map(f => ({
+                filename: f.filename,
+                status: f.status,
+                additions: f.additions,
+                deletions: f.deletions,
+                changes: f.changes,
+                previous_filename: f.previous_filename ?? null
+              })));
+
+              if (res.data.length < per_page) break;
+              page++;
+            }
+
+            // ファイル数が上限を超えた場合は警告
+            if (files.length >= maxFiles) {
+              core.warning(`File count exceeds ${maxFiles}. Only first ${maxFiles} files will be reviewed.`);
+              files = files.slice(0, maxFiles);
+            }
+
+            // 出力を設定
+            core.setOutput('files_meta_json', JSON.stringify(files));
+            core.setOutput('file_count', files.length);
+            core.setOutput('owner', owner);
+            core.setOutput('repo', repo);
+            core.setOutput('pr_number', pr.number.toString());
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('base_sha', pr.base.sha);
+            core.setOutput('pr_url', pr.html_url);
+
+            // PR タイトルとボディは複数行・特殊文字対応のため環境変数で渡す
+            core.exportVariable('PR_TITLE', pr.title || '');
+            core.exportVariable('PR_BODY', pr.body || '');
+
+      - name: Call Dify Workflow for Code Review
+        id: dify-review
+        env:
+          DIFY_API_KEY: ${{ secrets.DIFY_API_KEY }}
+          DIFY_WORKFLOW_URL: ${{ secrets.DIFY_WORKFLOW_URL }}
+          # PR情報は環境変数経由で渡す（シェルインジェクション対策）
+          OWNER: ${{ steps.pr-data.outputs.owner }}
+          REPO: ${{ steps.pr-data.outputs.repo }}
+          PR_NUMBER: ${{ steps.pr-data.outputs.pr_number }}
+          PR_URL: ${{ steps.pr-data.outputs.pr_url }}
+          HEAD_SHA: ${{ steps.pr-data.outputs.head_sha }}
+          BASE_SHA: ${{ steps.pr-data.outputs.base_sha }}
+          FILES_META_JSON: ${{ steps.pr-data.outputs.files_meta_json }}
+        run: |
+          set -euo pipefail
+
+          # 必須環境変数のチェック
+          if [[ -z "${DIFY_API_KEY:-}" ]]; then
+            echo "::error::DIFY_API_KEY is not set"
+            exit 1
+          fi
+          if [[ -z "${DIFY_WORKFLOW_URL:-}" ]]; then
+            echo "::error::DIFY_WORKFLOW_URL is not set"
+            exit 1
+          fi
+
+          # jqで安全にJSONペイロードを構築
+          # 全ての値を環境変数から取得することでシェルインジェクションを防止
+          payload="$(jq -n \
+            --arg owner "$OWNER" \
+            --arg repo "$REPO" \
+            --arg pr_number "$PR_NUMBER" \
+            --arg pr_title "$PR_TITLE" \
+            --arg pr_body "$PR_BODY" \
+            --arg pr_url "$PR_URL" \
+            --arg head_sha "$HEAD_SHA" \
+            --arg base_sha "$BASE_SHA" \
+            --arg files_meta_json "$FILES_META_JSON" \
+            --arg user "github-actions:${OWNER}/${REPO}#${PR_NUMBER}" \
+            '{
+              inputs: {
+                owner: $owner,
+                repo: $repo,
+                pr_number: $pr_number,
+                pr_title: $pr_title,
+                pr_body: $pr_body,
+                pr_url: $pr_url,
+                head_sha: $head_sha,
+                base_sha: $base_sha,
+                files_meta_json: $files_meta_json
+              },
+              response_mode: "blocking",
+              user: $user
+            }'
+          )"
+
+          echo "::debug::Payload size: $(echo "$payload" | wc -c) bytes"
+
+          # Dify Workflow APIを呼び出し
+          # --fail-with-body: エラー時もレスポンスボディを取得
+          # -w で HTTPステータスコードを末尾に追加
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            --max-time 300 \
+            --location \
+            --request POST "${DIFY_WORKFLOW_URL}" \
+            --header "Authorization: Bearer ${DIFY_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data-raw "$payload") || {
+            echo "::error::curl command failed"
+            exit 1
+          }
+
+          # レスポンスとHTTPステータスコードを分離
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "::group::Dify API Response"
+          echo "HTTP Status Code: $HTTP_CODE"
+          echo "Response Body:"
+          echo "$RESPONSE_BODY" | jq '.' 2>/dev/null || echo "$RESPONSE_BODY"
+          echo "::endgroup::"
+
+          # HTTPステータスコードのチェック
+          if [[ "$HTTP_CODE" -ge 400 ]]; then
+            echo "::error::Dify API returned HTTP $HTTP_CODE"
+            echo "Response: $RESPONSE_BODY"
+            exit 1
+          fi
+
+          # レビュー結果を抽出（複数のパスをチェック）
+          REVIEW_RESULT=$(echo "$RESPONSE_BODY" | jq -r '
+            .data.outputs.review_result //
+            .outputs.review_result //
+            .data.text //
+            empty
+          ')
+
+          if [[ -z "$REVIEW_RESULT" ]]; then
+            echo "::warning::Failed to extract review_result from Dify response"
+            echo "Response structure:"
+            echo "$RESPONSE_BODY" | jq 'keys' 2>/dev/null || echo "Unable to parse JSON"
+            
+            # エラーではなく警告として続行（フォールバックメッセージ）
+            REVIEW_RESULT="⚠️ レビュー結果の取得に失敗しました。
+
+Dify APIからの応答を解析できませんでした。
+ワークフローログを確認してください。
+
+**HTTP Status**: ${HTTP_CODE}
+**Run ID**: ${{ github.run_id }}"
+          fi
+
+          # 複数行のテキストを環境ファイルに保存（ヒアドキュメント形式）
+          {
+            echo 'REVIEW_RESULT<<GITHUB_ENV_EOF'
+            echo "$REVIEW_RESULT"
+            echo 'GITHUB_ENV_EOF'
+          } >> "$GITHUB_ENV"
+
+          echo "::notice::Code review completed successfully"
+
+      - name: Post Review Comment to PR
+        uses: actions/github-script@v7
+        if: always() && env.REVIEW_RESULT != ''
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const reviewResult = process.env.REVIEW_RESULT;
+            
+            if (!reviewResult) {
+              console.log('No review result to post');
+              return;
+            }
+
+            const prNumber = ${{ github.event.pull_request.number }};
+            const headSha = '${{ github.event.pull_request.head.sha }}';
+            const shortSha = headSha.substring(0, 7);
+            const runId = '${{ github.run_id }}';
+            const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${runId}`;
+            
+            const commentBody = `## 🤖 AI Code Review
+
+${reviewResult}
+
+---
+<details>
+<summary>ℹ️ レビュー情報</summary>
+
+- **PR**: #${prNumber}
+- **Commit**: \`${shortSha}\`
+- **Workflow Run**: [${runId}](${runUrl})
+- **Generated by**: Dify + Azure OpenAI
+
+</details>`;
+            
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: commentBody
+              });
+              console.log('Review comment posted successfully');
+            } catch (error) {
+              core.setFailed(`Failed to post comment: ${error.message}`);
+            }
+
+      - name: Handle Error
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const prNumber = ${{ github.event.pull_request.number }};
+            const runId = '${{ github.run_id }}';
+            const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${runId}`;
+            
+            const errorBody = `## ⚠️ AI Code Review Failed
+
+コードレビューの実行中にエラーが発生しました。
+
+### 確認事項
+1. \`DIFY_API_KEY\` シークレットが正しく設定されているか
+2. \`DIFY_WORKFLOW_URL\` シークレットが正しく設定されているか
+3. Difyワークフローが正常に動作しているか
+
+### デバッグ情報
+- **Workflow Run**: [${runId}](${runUrl})
+- **PR**: #${prNumber}
+
+---
+*ワークフローログを確認して詳細を確認してください。*`;
+            
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: errorBody
+              });
+            } catch (commentError) {
+              console.error('Failed to post error comment:', commentError.message);
+            }
