@@ -9,7 +9,7 @@ dependencies:
 - current_identifier: null
   type: marketplace
   value:
-    marketplace_plugin_unique_identifier: langgenius/openai:0.2.7@9031bbf9b37d9f6341a20c78a8bd18d686afd3ff627545496c3557705419d084
+    marketplace_plugin_unique_identifier: langgenius/openai:0.2.8@aae2be0913b8c6f0b80cff58e08d7a8b4c214569b41778413fcaea204561ff16
     version: null
 kind: app
 version: 0.5.0
@@ -389,45 +389,44 @@ workflow:
           \    \n    # テスト判定用\n    is_test = ('test' in basename or 'spec' in basename\
           \ or \n              '_test.' in path_lower or '.test.' in path_lower or\n\
           \              '/test/' in path_lower or '/tests/' in path_lower or\n  \
-          \            '/__tests__/' in path_lower)\n    \n    # グループ1: フロントエンドコンポーネント・ページ（最優先）\n\
-          \    frontend_exts = {'tsx', 'jsx', 'vue', 'svelte'}\n    if ext in frontend_exts:\n\
-          \        if is_test:\n            return (5, 0)\n        # ページ・レイアウトは特に重要\n\
-          \        if '/pages/' in path_lower or '/app/' in path_lower or '/layouts/'\
-          \ in path_lower:\n            return (1, 0)\n        # コンポーネント\n       \
-          \ if '/components/' in path_lower:\n            return (1, 1)\n        return\
-          \ (1, 2)\n    \n    # グループ2: JavaScript/TypeScript（ロジック・ユーティリティ）\n    js_exts\
-          \ = {'ts', 'js', 'mjs', 'cjs'}\n    if ext in js_exts:\n        if is_test:\n\
-          \            return (5, 0)\n        # API・サーバーサイド\n        if '/api/' in\
-          \ path_lower or '/server/' in path_lower:\n            return (2, 0)\n \
-          \       # フック・ストア・ユーティリティ\n        if '/hooks/' in path_lower or '/store/'\
-          \ in path_lower or '/utils/' in path_lower or '/lib/' in path_lower:\n \
-          \           return (2, 1)\n        return (2, 2)\n    \n    # グループ3: スタイルシート（Webサイトでは重要）\n\
-          \    style_exts = {'css', 'scss', 'sass', 'less', 'styl'}\n    if ext in\
-          \ style_exts:\n        # グローバルスタイルは重要\n        if 'global' in basename or\
-          \ 'main' in basename or 'app' in basename or 'index' in basename:\n    \
-          \        return (3, 0)\n        return (3, 1)\n    \n    # グループ4: HTML・テンプレート\n\
-          \    template_exts = {'html', 'htm', 'ejs', 'hbs', 'pug', 'njk', 'twig'}\n\
-          \    if ext in template_exts:\n        return (4, 0)\n    \n    # グループ5:\
-          \ テストファイル\n    if is_test:\n        return (5, 0)\n    \n    # グループ6: 設定ファイル\n\
-          \    config_patterns = [\n        'package.json', 'package-lock.json', 'yarn.lock',\
-          \ 'pnpm-lock.yaml',\n        'tsconfig', 'jsconfig', 'vite.config', 'next.config',\
-          \ 'nuxt.config',\n        'webpack.config', 'rollup.config', 'esbuild',\
-          \ 'babel.config',\n        'tailwind.config', 'postcss.config', 'eslint',\
-          \ 'prettier',\n        '.env', 'vercel.json', 'netlify.toml'\n    ]\n  \
-          \  config_exts = {'json', 'yml', 'yaml', 'toml', 'js', 'ts', 'mjs', 'cjs'}\n\
-          \    if any(p in basename for p in config_patterns):\n        # package.jsonは特に重要\n\
-          \        if basename == 'package.json':\n            return (6, 0)\n   \
-          \     return (6, 1)\n    if ext in config_exts and ('config' in basename\
-          \ or 'rc' in basename):\n        return (6, 2)\n    \n    # グループ7: ドキュメント\n\
-          \    doc_exts = {'md', 'mdx', 'txt', 'rst'}\n    if ext in doc_exts:\n \
-          \       if basename == 'readme.md':\n            return (7, 0)\n       \
-          \ return (7, 1)\n    \n    # グループ8: 画像・アセット\n    asset_exts = {'svg', 'png',\
-          \ 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'avif'}\n    font_exts = {'woff',\
-          \ 'woff2', 'ttf', 'eot', 'otf'}\n    if ext in asset_exts:\n        # SVGはコードとして扱うことも多い\n\
-          \        if ext == 'svg':\n            return (8, 0)\n        return (8,\
-          \ 1)\n    if ext in font_exts:\n        return (8, 2)\n    \n    # グループ9:\
-          \ インフラ・CI/CD\n    infra_patterns = ['dockerfile', 'docker-compose', '.github/',\
-          \ 'jenkinsfile', '.gitlab-ci']\n    if any(p in path_lower for p in infra_patterns):\n\
+          \            '__tests__' in path_lower)\n    \n    # グループ1: コアロジック（サーバーサイド）\n\
+          \    server_exts = {'py', 'rb', 'php', 'java', 'go', 'rs', 'cs'}\n    if\
+          \ ext in server_exts and not is_test:\n        if '/api/' in path_lower\
+          \ or '/routes/' in path_lower:\n            return (1, 0)\n        if '/models/'\
+          \ in path_lower or '/entities/' in path_lower:\n            return (1, 1)\n\
+          \        if '/services/' in path_lower or '/controllers/' in path_lower:\n\
+          \            return (1, 2)\n        return (2, 0)\n    \n    # グループ2: フロントエンド（ページ・コンポーネント）\n\
+          \    frontend_exts = {'tsx', 'jsx', 'vue', 'svelte'}\n    if ext in frontend_exts\
+          \ and not is_test:\n        if '/pages/' in path_lower or '/app/' in path_lower:\n\
+          \            return (2, 0)\n        if '/components/' in path_lower:\n \
+          \           return (2, 1)\n        return (2, 2)\n    \n    # グループ3: TypeScript/JavaScript（非コンポーネント）\n\
+          \    js_exts = {'ts', 'js', 'mjs', 'cjs'}\n    if ext in js_exts and not\
+          \ is_test:\n        if '/hooks/' in path_lower or '/composables/' in path_lower:\n\
+          \            return (3, 0)\n        if '/utils/' in path_lower or '/lib/'\
+          \ in path_lower or '/helpers/' in path_lower:\n            return (3, 1)\n\
+          \        if '/types/' in path_lower or '.d.ts' in filename:\n          \
+          \  return (3, 2)\n        return (3, 3)\n    \n    # グループ4: スタイル\n    style_exts\
+          \ = {'css', 'scss', 'sass', 'less', 'styl'}\n    if ext in style_exts:\n\
+          \        return (4, 0)\n    \n    # グループ5: テストファイル\n    if is_test:\n  \
+          \      return (5, 0)\n    \n    # グループ6: 設定ファイル\n    config_patterns = [\n\
+          \        'package.json', 'tsconfig', 'next.config', 'vite.config', 'nuxt.config',\n\
+          \        'webpack.config', 'rollup.config', 'esbuild', 'babel.config',\n\
+          \        'tailwind.config', 'postcss.config', 'eslint', 'prettier',\n  \
+          \      '.env', 'vercel.json', 'netlify.toml'\n    ]\n    config_exts = {'json',\
+          \ 'yml', 'yaml', 'toml', 'js', 'ts', 'mjs', 'cjs'}\n    if any(p in basename\
+          \ for p in config_patterns):\n        # package.jsonは特に重要\n        if basename\
+          \ == 'package.json':\n            return (6, 0)\n        return (6, 1)\n\
+          \    if ext in config_exts and ('config' in basename or 'rc' in basename):\n\
+          \        return (6, 2)\n    \n    # グループ7: ドキュメント\n    doc_exts = {'md',\
+          \ 'mdx', 'txt', 'rst'}\n    if ext in doc_exts:\n        if basename ==\
+          \ 'readme.md':\n            return (7, 0)\n        return (7, 1)\n    \n\
+          \    # グループ8: 画像・アセット\n    asset_exts = {'svg', 'png', 'jpg', 'jpeg', 'gif',\
+          \ 'webp', 'ico', 'avif'}\n    font_exts = {'woff', 'woff2', 'ttf', 'eot',\
+          \ 'otf'}\n    if ext in asset_exts:\n        # SVGはコードとして扱うことも多い\n     \
+          \   if ext == 'svg':\n            return (8, 0)\n        return (8, 1)\n\
+          \    if ext in font_exts:\n        return (8, 2)\n    \n    # グループ9: インフラ・CI/CD\n\
+          \    infra_patterns = ['dockerfile', 'docker-compose', '.github/', 'jenkinsfile',\
+          \ '.gitlab-ci']\n    if any(p in path_lower for p in infra_patterns):\n\
           \        return (9, 0)\n    \n    # その他\n    return (10, 0)\n\ndef main(\n\
           \    files_meta_json: str,\n    pr_files_response: str,\n    pr_files_response_p2:\
           \ str,\n    pr_files_response_p3: str,\n    pr_title: str,\n    pr_body:\
@@ -524,26 +523,28 @@ workflow:
           \    output_lines.append(f\"  - {tf}\")\n            if len(truncated_files)\
           \ > 10:\n                output_lines.append(f\"  - 他 {len(truncated_files)\
           \ - 10} 件\")\n        \n        result = \"\\n\".join(output_lines)\n  \
-          \      \n        return {\n            \"result\": result,\n           \
-          \ \"file_count\": len(file_details),\n            \"detailed_file_count\"\
-          : len(detailed_files),\n            \"summary_file_count\": len(summary_files),\n\
-          \            \"truncated_file_count\": len(truncated_files),\n         \
-          \   \"total_additions\": total_additions,\n            \"total_deletions\"\
-          : total_deletions,\n            \"total_changes\": total_changes,\n    \
-          \        \"total_chars\": len(result),\n            \"has_changes\": len(file_details)\
-          \ > 0\n        }\n        \n    except json.JSONDecodeError as e:\n    \
-          \    return {\n            \"result\": f\"⚠️ JSONパースエラー: {str(e)}\",\n \
-          \           \"file_count\": 0,\n            \"detailed_file_count\": 0,\n\
-          \            \"summary_file_count\": 0,\n            \"truncated_file_count\"\
-          : 0,\n            \"total_additions\": 0,\n            \"total_deletions\"\
-          : 0,\n            \"total_changes\": 0,\n            \"total_chars\": 0,\n\
-          \            \"has_changes\": False\n        }\n    except Exception as\
-          \ e:\n        return {\n            \"result\": f\"⚠️ データ整形エラー: {str(e)}\"\
-          ,\n            \"file_count\": 0,\n            \"detailed_file_count\":\
-          \ 0,\n            \"summary_file_count\": 0,\n            \"truncated_file_count\"\
-          : 0,\n            \"total_additions\": 0,\n            \"total_deletions\"\
-          : 0,\n            \"total_changes\": 0,\n            \"total_chars\": 0,\n\
-          \            \"has_changes\": False\n        }"
+          \      \n        # ✅ 修正: 全ての値を文字列に変換\n        return {\n            \"result\"\
+          : result,\n            \"file_count\": str(len(file_details)),\n       \
+          \     \"detailed_file_count\": str(len(detailed_files)),\n            \"\
+          summary_file_count\": str(len(summary_files)),\n            \"truncated_file_count\"\
+          : str(len(truncated_files)),\n            \"total_additions\": str(total_additions),\n\
+          \            \"total_deletions\": str(total_deletions),\n            \"\
+          total_changes\": str(total_changes),\n            \"total_chars\": str(len(result)),\n\
+          \            \"has_changes\": str(len(file_details) > 0)\n        }\n  \
+          \      \n    except json.JSONDecodeError as e:\n        # ✅ 修正: エラー時も文字列で返す\n\
+          \        return {\n            \"result\": f\"⚠️ JSONパースエラー: {str(e)}\"\
+          ,\n            \"file_count\": \"0\",\n            \"detailed_file_count\"\
+          : \"0\",\n            \"summary_file_count\": \"0\",\n            \"truncated_file_count\"\
+          : \"0\",\n            \"total_additions\": \"0\",\n            \"total_deletions\"\
+          : \"0\",\n            \"total_changes\": \"0\",\n            \"total_chars\"\
+          : \"0\",\n            \"has_changes\": \"False\"\n        }\n    except\
+          \ Exception as e:\n        # ✅ 修正: エラー時も文字列で返す\n        return {\n     \
+          \       \"result\": f\"⚠️ データ整形エラー: {str(e)}\",\n            \"file_count\"\
+          : \"0\",\n            \"detailed_file_count\": \"0\",\n            \"summary_file_count\"\
+          : \"0\",\n            \"truncated_file_count\": \"0\",\n            \"total_additions\"\
+          : \"0\",\n            \"total_deletions\": \"0\",\n            \"total_changes\"\
+          : \"0\",\n            \"total_chars\": \"0\",\n            \"has_changes\"\
+          : \"False\"\n        }\n"
         code_language: python3
         desc: ファイルを優先度でソートし、漏れなくレビュー用データを作成
         outputs:
@@ -571,7 +572,7 @@ workflow:
           truncated_file_count:
             children: null
             type: string
-        selected: false
+        selected: true
         title: 差分データ整形
         type: code
         variables:
@@ -691,7 +692,7 @@ workflow:
             **詳細表示**: {{#1765865834591.detailed_file_count#}}件
 
             **サマリー表示**: {{#1765865834591.summary_file_count#}}件'
-        selected: true
+        selected: false
         title: AIコードレビュー
         type: llm
         vision:
