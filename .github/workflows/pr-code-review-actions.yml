@@ -96,6 +96,7 @@ jobs:
           HEAD_SHA: ${{ steps.pr-data.outputs.head_sha }}
           BASE_SHA: ${{ steps.pr-data.outputs.base_sha }}
           FILES_META_JSON: ${{ steps.pr-data.outputs.files_meta_json }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
 
@@ -186,13 +187,16 @@ jobs:
             echo "$RESPONSE_BODY" | jq 'keys' 2>/dev/null || echo "Unable to parse JSON"
             
             # エラーではなく警告として続行（フォールバックメッセージ）
-            REVIEW_RESULT="⚠️ レビュー結果の取得に失敗しました。
+            # ヒアドキュメントを使用してYAML構文エラーを回避
+            read -r -d '' REVIEW_RESULT <<FALLBACK_MSG || true
+⚠️ レビュー結果の取得に失敗しました。
 
 Dify APIからの応答を解析できませんでした。
 ワークフローログを確認してください。
 
 **HTTP Status**: ${HTTP_CODE}
-**Run ID**: ${{ github.run_id }}"
+**Run ID**: ${RUN_ID}
+FALLBACK_MSG
           fi
 
           # 複数行のテキストを環境ファイルに保存（ヒアドキュメント形式）
