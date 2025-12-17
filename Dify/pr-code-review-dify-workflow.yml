@@ -523,27 +523,23 @@ workflow:
           \    output_lines.append(f\"  - {tf}\")\n            if len(truncated_files)\
           \ > 10:\n                output_lines.append(f\"  - 他 {len(truncated_files)\
           \ - 10} 件\")\n        \n        result = \"\\n\".join(output_lines)\n  \
-          \      \n        # ✅ 修正: 全ての値を文字列に変換\n        return {\n            \"result\"\
-          : result,\n            \"file_count\": str(len(file_details)),\n       \
-          \     \"detailed_file_count\": str(len(detailed_files)),\n            \"\
-          summary_file_count\": str(len(summary_files)),\n            \"truncated_file_count\"\
-          : str(len(truncated_files)),\n            \"total_additions\": str(total_additions),\n\
-          \            \"total_deletions\": str(total_deletions),\n            \"\
-          total_changes\": str(total_changes),\n            \"total_chars\": str(len(result)),\n\
+          \      \n        # ✅ 出力定義と完全一致（8項目のみ）\n        return {\n            \"\
+          result\": result,\n            \"file_count\": str(len(file_details)),\n\
+          \            \"detailed_file_count\": str(len(detailed_files)),\n      \
+          \      \"summary_file_count\": str(len(summary_files)),\n            \"\
+          truncated_file_count\": str(len(truncated_files)),\n            \"total_additions\"\
+          : str(total_additions),\n            \"total_deletions\": str(total_deletions),\n\
           \            \"has_changes\": str(len(file_details) > 0)\n        }\n  \
-          \      \n    except json.JSONDecodeError as e:\n        # ✅ 修正: エラー時も文字列で返す\n\
-          \        return {\n            \"result\": f\"⚠️ JSONパースエラー: {str(e)}\"\
-          ,\n            \"file_count\": \"0\",\n            \"detailed_file_count\"\
-          : \"0\",\n            \"summary_file_count\": \"0\",\n            \"truncated_file_count\"\
-          : \"0\",\n            \"total_additions\": \"0\",\n            \"total_deletions\"\
-          : \"0\",\n            \"total_changes\": \"0\",\n            \"total_chars\"\
-          : \"0\",\n            \"has_changes\": \"False\"\n        }\n    except\
-          \ Exception as e:\n        # ✅ 修正: エラー時も文字列で返す\n        return {\n     \
-          \       \"result\": f\"⚠️ データ整形エラー: {str(e)}\",\n            \"file_count\"\
+          \      \n    except json.JSONDecodeError as e:\n        return {\n     \
+          \       \"result\": f\"⚠️ JSONパースエラー: {str(e)}\",\n            \"file_count\"\
           : \"0\",\n            \"detailed_file_count\": \"0\",\n            \"summary_file_count\"\
           : \"0\",\n            \"truncated_file_count\": \"0\",\n            \"total_additions\"\
-          : \"0\",\n            \"total_deletions\": \"0\",\n            \"total_changes\"\
-          : \"0\",\n            \"total_chars\": \"0\",\n            \"has_changes\"\
+          : \"0\",\n            \"total_deletions\": \"0\",\n            \"has_changes\"\
+          : \"False\"\n        }\n    except Exception as e:\n        return {\n \
+          \           \"result\": f\"⚠️ データ整形エラー: {str(e)}\",\n            \"file_count\"\
+          : \"0\",\n            \"detailed_file_count\": \"0\",\n            \"summary_file_count\"\
+          : \"0\",\n            \"truncated_file_count\": \"0\",\n            \"total_additions\"\
+          : \"0\",\n            \"total_deletions\": \"0\",\n            \"has_changes\"\
           : \"False\"\n        }\n"
         code_language: python3
         desc: ファイルを優先度でソートし、漏れなくレビュー用データを作成
